@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>gogogo Terminal</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231a1a1a'/%3E%3Cpath d='M7 10l5 6-5 6' stroke='%2322c55e' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M14 10l5 6-5 6' stroke='%2322c55e' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M21 10l5 6-5 6' stroke='%2322c55e' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+    <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@6.0.0/lib/xterm.js" integrity="sha384-f/1U6Z9wM4D71a5eRXEZnyOTMOvjqxr2XLwh+Go1OvIl3L3tOcvUrzudnhbECwl4" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.11.0/lib/addon-fit.js" integrity="sha384-txoiwu4RR2GD3qySbaj+BbzibkLbSJRcfqGYMu6z1EqHil4A2dyBiBW5dlacG6OR" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@6.0.0/css/xterm.css" integrity="sha384-n2n7twoohnW+d3myBKaUgl7DSiwidw6MkQy9oesGzkPpMjejKRR3XlnD+5yCdtBD" crossorigin="anonymous">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #2a2a2a;
+            --fg: #ededed;
+            --text: #fff;
+            --text-muted: #888;
+            --text-dim: #555;
+            --border: #333;
+            --border-light: #444;
+            --input-bg: #0a0a0a;
+            --input-area-bg: rgba(26, 26, 26, 0.95);
+            --popup-bg: rgba(26, 26, 26, 0.98);
+            --accent: #3b82f6;
+            --accent-hover: rgba(59, 130, 246, 0.1);
+            --success: #22c55e;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --shadow: rgba(0, 0, 0, 0.3);
+            --shadow-heavy: rgba(0, 0, 0, 0.5);
+        }
+        :root.light {
+            --bg: #f5f5f5;
+            --bg-secondary: #e8e8e8;
+            --bg-tertiary: #ddd;
+            --fg: #1a1a1a;
+            --text: #1a1a1a;
+            --text-muted: #666;
+            --text-dim: #999;
+            --border: #ccc;
+            --border-light: #bbb;
+            --input-bg: #fff;
+            --input-area-bg: rgba(240, 240, 240, 0.95);
+            --popup-bg: rgba(245, 245, 245, 0.98);
+            --accent: #2563eb;
+            --accent-hover: rgba(37, 99, 235, 0.1);
+            --success: #16a34a;
+            --error: #dc2626;
+            --warning: #d97706;
+            --shadow: rgba(0, 0, 0, 0.1);
+            --shadow-heavy: rgba(0, 0, 0, 0.2);
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html, body {
+            height: 100%;
+            width: 100%;
+            background: var(--bg);
+            overflow: hidden;
+            overscroll-behavior: none;
+            -webkit-overflow-scrolling: auto;
+        }
+        body {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+        #terminal-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 50px;
+            padding: 8px;
+            /* Custom touch handling - disable native scrolling */
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            /* Disable iOS momentum scrolling - we handle it ourselves */
+            -webkit-overflow-scrolling: auto;
+            overscroll-behavior: contain;
+        }
+        .xterm-viewport {
+            /* Disable native touch handling for custom implementation */
+            touch-action: none;
+        }
+        .xterm-screen {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .xterm-helper-textarea {
+            caret-color: transparent !important;
+        }
+        #scroll-to-bottom {
+            position: fixed;
+            bottom: 60px;
+            right: 12px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(59, 130, 246, 0.9);
+            border: none;
+            color: white;
+            cursor: pointer;
+            z-index: 1001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px var(--shadow);
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.2s ease;
+            pointer-events: none;
+        }
+        #scroll-to-bottom.visible {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+        }
+        #scroll-to-bottom:hover {
+            background: rgba(59, 130, 246, 1);
+            transform: scale(1.1);
+        }
+        #scroll-to-bottom:active {
+            transform: scale(0.95);
+        }
+        #scroll-to-bottom svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+        #status-dot {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--success);
+            z-index: 1000;
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+            transition: all 0.3s ease;
+        }
+        #status-dot.disconnected {
+            background: var(--error);
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+        }
+        #status-dot.connecting {
+            background: var(--warning);
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        /* Theme toggle button */
+        #theme-toggle {
+            position: fixed;
+            top: 8px;
+            right: 32px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            padding: 0;
+        }
+        #theme-toggle:hover {
+            background: var(--bg-secondary);
+            color: var(--text);
+            border-color: var(--border-light);
+        }
+        #theme-toggle:active {
+            transform: scale(0.9);
+        }
+        #theme-toggle svg {
+            width: 16px;
+            height: 16px;
+        }
+        #input-area {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 8px 12px;
+            background: var(--input-area-bg);
+            border-top: 1px solid var(--border);
+            z-index: 1000;
+        }
+        #input-wrapper {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            position: relative;
+        }
+        #input {
+            flex: 1;
+            min-height: 34px;
+            max-height: 100px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            padding: 8px 45px 8px 12px;
+            color: var(--text);
+            font-size: 16px;
+            font-family: inherit;
+            outline: none;
+            resize: none;
+            overflow-y: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        #input::-webkit-scrollbar { display: none; }
+        #input:focus { border-color: var(--accent); }
+
+        /* File upload button inside input field */
+        #file-upload-btn {
+            position: absolute;
+            right: 52px;
+            bottom: 7px;
+            width: 32px;
+            height: 32px;
+            background: transparent;
+            border: none;
+            border-radius: 50%;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            z-index: 10;
+        }
+        #file-upload-btn:hover {
+            background: var(--accent-hover);
+            color: var(--accent);
+        }
+
+        /* Special keys button */
+        #special-keys-btn {
+            width: 40px;
+            height: 40px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        #special-keys-btn:hover {
+            background: var(--bg-tertiary);
+            color: var(--text);
+            border-color: var(--border-light);
+        }
+        #special-keys-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Special keys popup */
+        #special-keys-popup {
+            position: fixed;
+            bottom: 60px;
+            right: 12px;
+            background: var(--popup-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 8px;
+            display: none;
+            z-index: 1001;
+            box-shadow: 0 4px 12px var(--shadow-heavy);
+            min-width: 350px;
+            max-width: 400px;
+        }
+        #special-keys-popup.show {
+            display: block;
+        }
+        .key-group {
+            margin-bottom: 8px;
+        }
+        .key-group:last-child {
+            margin-bottom: 0;
+        }
+        .key-group-title {
+            color: var(--text-muted);
+            font-size: 11px;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            padding: 0 4px;
+        }
+        .key-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        .special-key {
+            padding: 6px 10px;
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text);
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+            min-width: 40px;
+            text-align: center;
+        }
+        .special-key:hover {
+            background: var(--bg-secondary);
+            border-color: var(--accent);
+        }
+        .special-key:active {
+            transform: scale(0.95);
+            background: var(--accent);
+        }
+
+        /* Debug console styles */
+        .debug-console {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+        .debug-title {
+            color: var(--accent);
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        .debug-control {
+            margin-bottom: 8px;
+        }
+        .debug-control label {
+            display: block;
+            color: var(--text-muted);
+            font-size: 11px;
+            margin-bottom: 4px;
+        }
+        .debug-control input[type="number"] {
+            width: 100%;
+            padding: 4px 8px;
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text);
+            font-size: 12px;
+        }
+        .debug-control input[type="number"]:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        .context-preview {
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 8px;
+            max-height: 120px;
+            overflow-y: auto;
+            font-size: 11px;
+            color: var(--text-muted);
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Courier New', monospace;
+        }
+        .context-preview::-webkit-scrollbar {
+            width: 4px;
+        }
+        .context-preview::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+        .context-preview::-webkit-scrollbar-thumb {
+            background: var(--border-light);
+            border-radius: 2px;
+        }
+        .api-status {
+            margin-top: 8px;
+            padding: 4px 8px;
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        .api-status.connected {
+            border-color: var(--success);
+            color: var(--success);
+        }
+        .api-status.error {
+            border-color: var(--error);
+            color: var(--error);
+        }
+        #input-area.native-mode {
+            opacity: 0.3;
+            transition: opacity 0.3s ease;
+        }
+        #input-area.native-mode:hover,
+        #input-area.native-mode:focus-within {
+            opacity: 1;
+        }
+
+    </style>
+</head>
+<body>
+    <div id="terminal-container"></div>
+
+    <!-- Status indicator -->
+    <div id="status-dot" class="connecting"></div>
+    <!-- Theme toggle -->
+    <button id="theme-toggle" title="Toggle light/dark theme">
+        <svg id="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+            <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+        <svg id="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+    </button>
+
+    <!-- Scroll to bottom button -->
+    <button id="scroll-to-bottom">
+        <svg viewBox="0 0 24 24">
+            <path d="M7 10l5 5 5-5H7z"/>
+        </svg>
+    </button>
+
+    <!-- Input area -->
+    <div id="input-area">
+        <div id="input-wrapper">
+            <textarea id="input" placeholder="Type command..." rows="1"></textarea>
+
+            <!-- File/image upload button inside input field -->
+            <button id="file-upload-btn" title="Upload image (or paste from clipboard)">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                </svg>
+            </button>
+            <input type="file" id="file-upload-input" accept="image/*" style="display:none">
+
+            <!-- Special keys button -->
+            <button id="special-keys-btn" title="Special keys">⌘</button>
+        </div>
+    </div>
+
+    <!-- Special keys popup -->
+    <div id="special-keys-popup">
+        <div class="key-group">
+            <div class="key-group-title">Control</div>
+            <div class="key-buttons">
+                <button class="special-key" data-key="Escape">Esc</button>
+                <button class="special-key" data-key="Tab">Tab</button>
+                <button class="special-key" data-key="Up">↑</button>
+                <button class="special-key" data-key="Down">↓</button>
+                <button class="special-key" data-key="Left">←</button>
+                <button class="special-key" data-key="Right">→</button>
+            </div>
+        </div>
+        <div class="key-group">
+            <div class="key-group-title">Shortcuts</div>
+            <div class="key-buttons">
+                <button class="special-key" data-key="Ctrl+C">Ctrl+C</button>
+                <button class="special-key" data-key="Ctrl+D">Ctrl+D</button>
+                <button class="special-key" data-key="Ctrl+Z">Ctrl+Z</button>
+                <button class="special-key" data-key="Ctrl+L">Clear</button>
+            </div>
+        </div>
+        <div class="key-group">
+            <div class="key-group-title">Navigation</div>
+            <div class="key-buttons">
+                <button class="special-key" data-key="Home">Home</button>
+                <button class="special-key" data-key="End">End</button>
+                <button class="special-key" data-key="PageUp">PgUp</button>
+                <button class="special-key" data-key="PageDown">PgDn</button>
+            </div>
+        </div>
+        <div class="key-group">
+            <div class="key-group-title">Function</div>
+            <div class="key-buttons">
+                <button class="special-key" data-key="F1">F1</button>
+                <button class="special-key" data-key="F2">F2</button>
+                <button class="special-key" data-key="F3">F3</button>
+                <button class="special-key" data-key="F4">F4</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="/js/terminal.js"></script>
+</body>
+</html>

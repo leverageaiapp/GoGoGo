@@ -1,0 +1,67 @@
+{
+    "name": "@leverageaiapps/gogogo",
+    "version": "1.0.0",
+    "description": "CLI tool to forward terminal sessions to your mobile device via Cloudflare Tunnel. Code anywhere from your pocket.",
+    "main": "dist/index.js",
+    "bin": {
+        "gogogo": "./dist/index.js"
+    },
+    "files": [
+        "dist/",
+        "public/",
+        "scripts/"
+    ],
+    "scripts": {
+        "build": "tsc",
+        "dev": "ts-node src/index.ts",
+        "start": "node dist/index.js",
+        "test": "vitest run",
+        "postinstall": "node scripts/postinstall.js",
+        "verify": "node scripts/verify-install.js",
+        "prepublishOnly": "npm run build",
+        "global-install": "npm install && npm run build && npm link"
+    },
+    "keywords": [
+        "terminal",
+        "mobile",
+        "cloudflare",
+        "tunnel",
+        "remote",
+        "pty",
+        "cli",
+        "claude-code",
+        "ai",
+        "coding"
+    ],
+    "author": "LeverageAI Apps",
+    "license": "MIT",
+    "dependencies": {
+        "commander": "^12.1.0",
+        "cookie-parser": "^1.4.7",
+        "express": "^5.2.1",
+        "node-pty": "^1.1.0",
+        "qrcode-terminal": "^0.12.0",
+        "ws": "^8.19.0"
+    },
+    "devDependencies": {
+        "@types/cookie-parser": "^1.4.10",
+        "@types/express": "^5.0.6",
+        "@types/node": "^20.17.12",
+        "@types/qrcode-terminal": "^0.12.2",
+        "@types/ws": "^8.18.1",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.7.2",
+        "vitest": "^3.0.0"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/leverageaiapp/GoGoGo.git"
+    },
+    "bugs": {
+        "url": "https://github.com/leverageaiapp/GoGoGo/issues"
+    },
+    "homepage": "https://gogogo.locus.cool"
+}
