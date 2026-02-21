@@ -26,14 +26,18 @@ if (majorVersion >= 18) {
     hasErrors = true;
 }
 
-// Check 2: cloudflared
+// Check 2: cloudflared (bundled via npm)
 console.log('2. Checking cloudflared...');
 try {
-    const cloudflaredVersion = execSync('cloudflared --version', { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
-    console.log(`   ✓ cloudflared installed: ${cloudflaredVersion.trim()}\n`);
+    const { bin: cfBin } = require('cloudflared');
+    if (fs.existsSync(cfBin)) {
+        console.log(`   ✓ cloudflared binary present: ${cfBin}\n`);
+    } else {
+        console.log('   ⚠ cloudflared binary not yet downloaded (will auto-download on first run)\n');
+        hasWarnings = true;
+    }
 } catch (error) {
-    console.log('   ✗ cloudflared not found');
-    console.log('   Install it from: https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/\n');
+    console.log('   ✗ cloudflared npm package not found. Run: npm install\n');
     hasErrors = true;
 }
 

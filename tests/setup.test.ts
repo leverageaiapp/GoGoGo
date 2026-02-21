@@ -350,6 +350,13 @@ describe('error handling and security fixes', () => {
         expect(content).toMatch(/function stopTunnel[\s\S]*?crashCallbacks\s*=\s*\[\]/);
     });
 
+    it('cloudflare-tunnel.ts uses cloudflared npm package instead of system binary', () => {
+        const content = fs.readFileSync(path.join(srcDir, 'cloudflare-tunnel.ts'), 'utf-8');
+        expect(content).toMatch(/from\s+['"]cloudflared['"]/);
+        expect(content).not.toMatch(/spawn\(['"]which['"]/);
+        expect(content).not.toMatch(/getInstallationInstructions/);
+    });
+
     it('terminal.js wraps JSON.parse in try/catch', () => {
         const content = fs.readFileSync(path.join(root, 'public', 'js', 'terminal.js'), 'utf-8');
         expect(content).toMatch(/try\s*\{\s*msg\s*=\s*JSON\.parse/);

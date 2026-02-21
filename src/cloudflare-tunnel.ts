@@ -1,6 +1,6 @@
 import { spawn, ChildProcess } from 'child_process';
 import * as fs from 'fs';
-import * as os from 'os';
+import { bin as cloudflaredBin, install as installCloudflared } from 'cloudflared';
 
 let tunnelProcess: ChildProcess | null = null;
 let tunnelUrl: string | null = null;
@@ -8,102 +8,33 @@ let crashCallbacks: ((code: number | null) => void)[] = [];
 let intentionalStop = false;
 
 /**
- * Get platform-specific installation instructions for cloudflared
+ * Ensure cloudflared binary is available. Downloads it automatically if missing.
  */
-function getInstallationInstructions(): string {
-    const platform = os.platform();
-
-    switch (platform) {
-        case 'darwin': // macOS
-            return `cloudflared is required for gogogo to work. Please install it using Homebrew:
-
-    brew install cloudflared
-
-Alternatively, you can download it from: https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/`;
-
-        case 'linux':
-            // Detect Linux distribution
-            let distroInstructions = '';
-
-            try {
-                // Check for common package managers
-                if (fs.existsSync('/usr/bin/apt') || fs.existsSync('/usr/bin/apt-get')) {
-                    // Debian/Ubuntu
-                    distroInstructions = `    # Add Cloudflare GPG key
-    sudo mkdir -p --mode=0755 /usr/share/keyrings
-    curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | sudo tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
-
-    # Add Cloudflare repository
-    echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main' | sudo tee /etc/apt/sources.list.d/cloudflared.list
-
-    # Install cloudflared
-    sudo apt-get update && sudo apt-get install cloudflared`;
-                } else if (fs.existsSync('/usr/bin/yum')) {
-                    // CentOS/RHEL
-                    distroInstructions = `    # Add Cloudflare repository
-    curl -fsSl https://pkg.cloudflare.com/cloudflared.repo | sudo tee /etc/yum.repos.d/cloudflared.repo
-
-    # Install cloudflared
-    sudo yum update && sudo yum install cloudflared`;
-                } else if (fs.existsSync('/usr/bin/dnf')) {
-                    // Fedora
-                    distroInstructions = `    # Add Cloudflare repository
-    sudo dnf config-manager --add-repo https://pkg.cloudflare.com/cloudflared.repo
-
-    # Install cloudflared
-    sudo dnf install cloudflared`;
-                } else if (fs.existsSync('/usr/bin/pacman')) {
-                    // Arch Linux
-                    distroInstructions = `    # Install from community repository
-    sudo pacman -S cloudflared`;
-                } else {
-                    // Generic Linux
-                    distroInstructions = `    # Download and install manually
-    curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o cloudflared
-    chmod +x cloudflared
-    sudo mv cloudflared /usr/local/bin/`;
-                }
-            } catch (error) {
-                // Fallback to generic instructions
-                distroInstructions = `    # Download and install manually
-    curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o cloudflared
-    chmod +x cloudflared
-    sudo mv cloudflared /usr/local/bin/`;
-            }
-
-            return `cloudflared is required for gogogo to work. Please install it:
-
-${distroInstructions}
-
-For other distributions, see: https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/`;
-
-        default:
-            return `cloudflared is required for gogogo to work. Please install it from:
-https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/`;
+async function ensureCloudflared(): Promise<string> {
+    if (fs.existsSync(cloudflaredBin)) {
+        return cloudflaredBin;
     }
+
+    console.log('  cloudflared not found, downloading...');
+    await installCloudflared(cloudflaredBin);
+    console.log('  cloudflared installed.');
+    return cloudflaredBin;
 }
 
 /**
  * Start Cloudflare Quick Tunnel
  * Returns the generated tunnel URL
  */
-export function startTunnel(localPort: number = 4020): Promise<string> {
+export async function startTunnel(localPort: number = 4020): Promise<string> {
+    const binPath = await ensureCloudflared();
+
     return new Promise((resolve, reject) => {
-
-        // Check if cloudflared is installed
-        const which = spawn('which', ['cloudflared']);
-        which.on('close', (code) => {
-            if (code !== 0) {
-                reject(new Error(getInstallationInstructions()));
-                return;
-            }
-
-            startTunnelProcess(localPort, resolve, reject);
-        });
+        startTunnelProcess(binPath, localPort, resolve, reject);
     });
 }
 
 function startTunnelProcess(
+    binPath: string,
     localPort: number,
     resolve: (url: string) => void,
     reject: (err: Error) => void
@@ -113,7 +44,7 @@ function startTunnelProcess(
 
     // Use --url for quick tunnel (no account needed)
     // Bypass proxy to avoid TLS handshake issues
-    tunnelProcess = spawn('cloudflared', ['tunnel', '--url', `http://localhost:${localPort}`], {
+    tunnelProcess = spawn(binPath, ['tunnel', '--url', `http://localhost:${localPort}`], {
         stdio: ['ignore', 'pipe', 'pipe'],
         env: env,
     });

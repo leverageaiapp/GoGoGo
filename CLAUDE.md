@@ -33,7 +33,7 @@ CLI (index.ts) → Session (session.ts) → [Web Server, Cloudflare Tunnel, PTY]
 2. **`src/session.ts`** — Orchestrator: finds a port, generates auth token, starts web server, creates tunnel, displays QR code, spawns PTY, handles cleanup.
 3. **`src/web-server.ts`** — Express 5 HTTP + WebSocket server. Token-based auth (cookie after initial token query param). Serves static frontend. WebSocket handles terminal I/O and resize events. Maintains output buffer (5000 entries) for reconnecting clients.
 4. **`src/pty.ts`** — Thin `node-pty` wrapper. Mirrors output to local stdout and a callback. Uses callback registration (`onPTYData`, `onPTYExit`) for IPC.
-5. **`src/cloudflare-tunnel.ts`** — Manages `cloudflared tunnel` subprocess. Parses tunnel URL from process output with 30s timeout.
+5. **`src/cloudflare-tunnel.ts`** — Manages `cloudflared tunnel` subprocess. Uses the `cloudflared` npm package to auto-download the binary if missing. Parses tunnel URL from process output with 30s timeout.
 
 ### Frontend (`public/`)
 

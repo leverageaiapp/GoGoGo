@@ -12,39 +12,13 @@ CLI tool to forward terminal sessions to your mobile device via Cloudflare Tunne
 
 ## Features
 
-- **Instant Setup** - One command to start forwarding your terminal
+- **Zero Config** - One command to start; `cloudflared` is downloaded automatically
 - **Mobile Access** - Access your terminal from any device with a browser
 - **Secure** - Cryptographic token auth with httpOnly cookies
 - **No Port Forwarding** - Uses Cloudflare Quick Tunnel (no account needed)
 - **Real-time** - WebSocket-based communication for instant feedback
 - **PTY Support** - Full terminal emulation with node-pty
 - **Image Paste** - Paste images from clipboard to upload file paths
-
-## Prerequisites
-
-### Install cloudflared
-
-GoGoGo requires `cloudflared` to create secure tunnels:
-
-**macOS:**
-```bash
-brew install cloudflared
-```
-
-**Ubuntu/Debian:**
-```bash
-sudo mkdir -p --mode=0755 /usr/share/keyrings
-curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | sudo tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
-echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main' | sudo tee /etc/apt/sources.list.d/cloudflared.list
-sudo apt-get update && sudo apt-get install cloudflared
-```
-
-**Arch Linux:**
-```bash
-sudo pacman -S cloudflared
-```
-
-For other systems, see the [official installation guide](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/).
 
 ## Installation
 
@@ -136,14 +110,6 @@ chmod +x node_modules/node-pty/prebuilds/darwin-x64/spawn-helper
 
 # Linux x64
 chmod +x node_modules/node-pty/prebuilds/linux-x64/spawn-helper
-```
-
-### cloudflared not found
-
-Install cloudflared following the [Prerequisites](#prerequisites) section, then verify:
-
-```bash
-cloudflared --version
 ```
 
 ## Contributing

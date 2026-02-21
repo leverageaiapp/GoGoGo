@@ -1,6 +1,6 @@
 {
     "name": "@leverageaiapps/gogogo",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "CLI tool to forward terminal sessions to your mobile device via Cloudflare Tunnel. Code anywhere from your pocket.",
     "main": "dist/index.js",
     "bin": {
@@ -36,6 +36,7 @@
     "author": "LeverageAI Apps",
     "license": "MIT",
     "dependencies": {
+        "cloudflared": "^0.7.1",
         "commander": "^12.1.0",
         "cookie-parser": "^1.4.7",
         "express": "^5.2.1",
