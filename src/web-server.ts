@@ -167,7 +167,7 @@ export function startWebServer(port: number, token: string): Promise<void> {
             res.setHeader('X-Content-Type-Options', 'nosniff');
             res.setHeader('X-Frame-Options', 'DENY');
             res.setHeader('Referrer-Policy', 'no-referrer');
-            res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; connect-src 'self' wss:; img-src 'self' data:");
+            res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; connect-src 'self' wss: https://cdn.jsdelivr.net; img-src 'self' data:");
             if (isSecure(req)) {
                 res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
             }

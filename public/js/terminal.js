@@ -17,15 +17,20 @@ let isLightTheme = (() => {
 window.term = new Terminal({
     cursorBlink: true,
     fontSize: 14,
-    fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+    fontFamily: '"Noto Sans Mono CJK SC", "Noto Sans Mono CJK TC", "Noto Sans Mono CJK JP", Menlo, Consolas, Monaco, "Courier New", monospace',
     smoothScrollDuration: 120,
     theme: isLightTheme ? lightTheme : darkTheme,
     scrollback: 10000,
     allowTransparency: false,
+    allowProposedApi: true,
+    rescaleOverlappingGlyphs: true,
 });
 
 const fitAddon = new FitAddon.FitAddon();
 term.loadAddon(fitAddon);
+const unicode11Addon = new Unicode11Addon.Unicode11Addon();
+term.loadAddon(unicode11Addon);
+term.unicode.activeVersion = '11';
 term.open(document.getElementById('terminal-container'));
 try { fitAddon.fit(); } catch(e) {}
 

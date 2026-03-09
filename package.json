@@ -1,6 +1,6 @@
 {
     "name": "@leverageaiapps/gogogo",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "description": "CLI tool to forward terminal sessions to your mobile device via Cloudflare Tunnel. Code anywhere from your pocket.",
     "main": "dist/index.js",
     "bin": {
@@ -12,7 +12,7 @@
         "scripts/"
     ],
     "scripts": {
-        "build": "tsc",
+        "build": "tsc && chmod +x dist/index.js",
         "dev": "ts-node src/index.ts",
         "start": "node dist/index.js",
         "test": "vitest run",
